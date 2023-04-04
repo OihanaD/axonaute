@@ -1,9 +1,7 @@
 #index:
 #    path: /
 #    controller: App\Controller\DefaultController::index
-app_api:
-  path: /api/{endpoint}
-  controller: App\Controller\ApiController::endpoint
+
 api_login_check:
     path: /api/login_check
 api_add:
