@@ -1,0 +1,16 @@
+#index:
+#    path: /
+#    controller: App\Controller\DefaultController::index
+app_api:
+  path: /api/{endpoint}
+  controller: App\Controller\ApiController::endpoint
+api_login_check:
+    path: /api/login_check
+api_add:
+    path: /api/me/add
+    controller: App\Controller\ConnexionApiController::add
+    methods: [POST, PUT, PATCH]
+    format: json
+api_id:
+  path: /api/1
+  controller: App\Controller\ApiController::apiBaseConnexion
