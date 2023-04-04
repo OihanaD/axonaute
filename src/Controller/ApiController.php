@@ -11,12 +11,12 @@ use Symfony\Component\Routing\Annotation\Route;
 class ApiController extends AbstractController
 {
     
-    #[Route('/api/{endpoint}', name: 'app_api')]
-    public function endpoint(AxaunoteService $service, string $endpoint): Response
-    {
-        $response = $service->makeApiRequest($endpoint);
-        return $this->json($response);
-    }
+    // #[Route('/api/{endpoint}', name: 'app_api')]
+    // public function endpoint(AxaunoteService $service, string $endpoint): Response
+    // {
+    //     $response = $service->makeApiRequestEndpoint($endpoint);
+    //     return $this->json($response);
+    // }
     
 
     

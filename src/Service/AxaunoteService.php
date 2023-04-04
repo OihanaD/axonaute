@@ -3,7 +3,6 @@
 namespace App\Service;
 
 use App\Entity\ApiInformation;
-use App\Entity\User;
 use App\Entity\UserApiInformation;
 use App\Repository\ApiInformationRepository;
 use App\Repository\UserApiInformationRepository;
@@ -20,16 +19,12 @@ class AxaunoteService
 {
     private $httpClient;
     private $entityManager;
-
-    private $baseUrl;
-    private $apiKey;
     private $jwtManager;
     private $tokenStorageInterface;
     private $userRepos;
     private $apiRepos;
     private $userApiRepos;
     private $user;
-    private $apiInfos;
 
     public function __construct(
         HttpClientInterface $httpClient,
@@ -39,58 +34,70 @@ class AxaunoteService
         UserRepository $userRepos,
         ApiInformationRepository $apiRepos,
         UserApiInformationRepository $userApiRepos
-        // string $baseUrl,
-        // string $apiKey
     ) {
         $this->httpClient = $httpClient;
-        //à définir dans le formulaire d'ajout api
-        $baseUrl = "https://axonaut.com/api/v2/";
-        $this->baseUrl = $baseUrl;
-        $apiKey = "07128b3580c2fd221388dee1794a67ea";
-        $this->apiKey = $apiKey;
         $this->entityManager = $entityManager;
         $this->jwtManager = $jwtManager;
         $this->tokenStorageInterface = $tokenStorageInterface;
         $this->userRepos = $userRepos;
         $this->apiRepos = $apiRepos;
         $this->userApiRepos = $userApiRepos;
-
     }
 
-    public function makeApiRequest(string $path)
+   
+    public function getApiRelation($idInPath, Request $request, string $endpoint)
+    {
+        //Je récupère le token et j'attribut le user
+        $this->decodeToken($request);
+
+        //Je recherche la relation avec l'id de la requête = id: relation, id: user, id: api
+        $idRelation = $this->userApiRepos->find($idInPath);
+        //Je prend l'id user de la relation
+        if ($idRelation) {
+
+            $userApi = $idRelation->getUserId();
+            //Je récupère le user via la variable user du token
+            $user = $this->user;
+            //Si le user correspond au user du token
+            if ($userApi == $user) {
+                //Je récupère la base url et la clé via de la relation// find on by car je suis sûre qu'il n'y en a qu'un
+                $apiInfos = $this->apiRepos->findOneBy(["id" => $idRelation->getApiInformationId()]);
+                //Je récupère l'url dans la table en la cherchant dans le rops des api information via id de api information danss la table tampon
+                $url = $apiInfos->getBaseUrl();
+                //Pareil pour la clé
+                $key = $apiInfos->getApiKey();
+                //Maintenant je peux utiliser mon make api pour faire ma requête
+                $response = $this->makeApiRequest($url, $key, $endpoint);
+               
+                return json_decode(stripslashes($response->getContent()));
+               //Changer en try et catch?
+            } else {
+                return new JsonResponse(['message' => 'Api not found'], 404);
+            }
+        } else {
+            return new JsonResponse(['message' => 'Api not found'], 404);
+        }
+    }
+    public function makeApiRequest(string $url, string $key, string $endpoint)
     {
         //Je prend ma base d'url et j'y rajoute le endpoint pour y avoir accès
-        $url = $this->baseUrl . $path;
+        $url = $url . "/" . $endpoint;
         //Je prends en coumpte le chemin de l'url et les paramètres de la requête dans le header
         $response = $this->httpClient->request('GET', $url, [
             'headers' => [
-                'userApiKey' => $this->apiKey,
+                'userApiKey' => $key,
             ],
         ]);
 
-        return json_decode(stripslashes($response->getContent()));
-    }
-    public function getApiRelation($idInPath, Request $request)
-    {
-        $data = $this->decodeToken($request);
-        $idRelation = $this->userApiRepos->find($idInPath);
-        
-        $userId= $this->user->getid();
-        $user = $this->userApiRepos->findBy(['UserId' => $userId]);
-        dd($user);
-
-
+        return $response;
     }
 
-    //$apiService = new ApiService($httpClient, 'https://api.example.com/', 'your_api_key');
-    //$response = $apiService->makeApiRequest('endpoint');
+
 
     public function add(Request $request)
     {
 
         $data = $this->decodeToken($request);
-        // dd($this->user->getid());
-
         //J'envoi tout en bdd
         $api = new ApiInformation();
         $api->setBaseUrl($data['url']);
@@ -103,6 +110,7 @@ class AxaunoteService
         if ($apiInfo) {
             return new JsonResponse(['message' => 'Api Connexion alredy exist'], 200);
         } else {
+            //J'envoie tout en bdd
             $userapi = new UserApiInformation;
             $userapi->setUserId($this->user);
             $userapi->setApiInformationId($api);
