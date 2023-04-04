@@ -70,9 +70,11 @@ class AxaunoteService
 
         return json_decode(stripslashes($response->getContent()));
     }
-    public function getApiRelation($idInPath)
+    public function getApiRelation($idInPath, Request $request)
     {
+        $data = $this->decodeToken($request);
         $idRelation = $this->userApiRepos->find($idInPath);
+        
         $userId= $this->user->getid();
         $user = $this->userApiRepos->findBy(['UserId' => $userId]);
         dd($user);

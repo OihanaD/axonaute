@@ -12,5 +12,5 @@ api_add:
     methods: [POST, PUT, PATCH]
     format: json
 api_id:
-  path: /api/1
-  controller: App\Controller\ApiController::apiBaseConnexion
+  path: /api/me/1
+  controller: App\Controller\ApiAccessController::apiBaseConnexion
