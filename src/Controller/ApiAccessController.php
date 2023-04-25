@@ -10,7 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ApiAccessController extends AbstractController
 {
-    #[Route('/api/me/{id}/{endpoint}', name: 'api_id')]
+    #[Route('/api/{id}/{endpoint}', name: 'api_id')]
     public function apiBaseConnexion(AxaunoteService $service, Request $request, $id, $endpoint): Response
     {
         $response = $service->getApiRelation($id, $request, $endpoint);

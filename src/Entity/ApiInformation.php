@@ -24,9 +24,13 @@ class ApiInformation
     #[ORM\OneToMany(mappedBy: 'ApiInformationId', targetEntity: UserApiInformation::class)]
     private Collection $userApiInformation;
 
+    #[ORM\OneToMany(mappedBy: 'targetApi', targetEntity: Target::class)]
+    private Collection $targets;
+
     public function __construct()
     {
         $this->userApiInformation = new ArrayCollection();
+        $this->targets = new ArrayCollection();
     }
 
    
@@ -83,6 +87,36 @@ class ApiInformation
             // set the owning side to null (unless already changed)
             if ($userApiInformation->getApiInformationId() === $this) {
                 $userApiInformation->setApiInformationId(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Target>
+     */
+    public function getTargets(): Collection
+    {
+        return $this->targets;
+    }
+
+    public function addTarget(Target $target): self
+    {
+        if (!$this->targets->contains($target)) {
+            $this->targets->add($target);
+            $target->setTargetApi($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTarget(Target $target): self
+    {
+        if ($this->targets->removeElement($target)) {
+            // set the owning side to null (unless already changed)
+            if ($target->getTargetApi() === $this) {
+                $target->setTargetApi(null);
             }
         }
 
