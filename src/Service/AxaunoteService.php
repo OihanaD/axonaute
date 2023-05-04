@@ -7,10 +7,12 @@ use App\Entity\UserApiInformation;
 use App\Repository\ApiInformationRepository;
 use App\Repository\UserApiInformationRepository;
 use App\Repository\UserRepository;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -150,5 +152,202 @@ class AxaunoteService
                 return $data;
             }
         }
+    }
+    public function getCaPerMonth($idInPath, Request $request, $month, $year,$status)
+    {
+        //J'initialise le tableaux
+        $value = [];
+        
+        //je définis le status de la demande
+        $status = $this->getStatus($status);
+
+        $endpoint =  'invoices?date_before=31%2F' . $month . '%2F' . $year . '&date_after=01%2F' . $month . '%2F' . $year."is_paid=".$status;
+        //Je récupère les données dans l'url
+        $response = $this->getApiRelation($idInPath, $request,$endpoint);
+        //Pour chaques valeurs, je récupère le total de la facture et je sotck tout d'ans un tableau
+        foreach ($response as $res) {
+            $value[] = $res->total;
+        }
+        //Je sock la somme du tableau dans une variable 
+        $kpi = "Ca-03 :" . array_sum($value);
+        $responses = new Response();
+        //Je revoie la réponse sous forme de json
+        $responses->setContent(json_encode($kpi));
+        return $responses;
+    }
+    public function getCaPerYear($idInPath, Request $request, $year)
+    {
+
+        $value = [];
+
+        $response = $this->getApiRelation($idInPath, $request, 'invoices?date_before=31%2F12%2F' . $year . '&date_after=01%2F01%2F' . $year);
+        foreach ($response as $res) {
+            $value[] = $res->total;
+        }
+        $kpi = "Ca" . $year . " :" . array_sum($value);
+        $responses = new Response();
+        $responses->setContent(json_encode($kpi));
+        return $responses;
+    }
+    public function getCaPerDate($idInPath, Request $request, $firstYear, $secondYear, $firstMonth, $secondMonth, $firstDay, $secondDay)
+    {
+
+        $value = [];
+
+        $response = $this->getApiRelation($idInPath, $request, 'invoices?date_before=' . $secondDay . '%2F' . $secondMonth . '%2F' . $secondYear . '&date_after=' . $firstDay . '%2F' . $firstMonth . '%2F' . $firstYear);
+        foreach ($response as $res) {
+            $value[] = $res->total;
+        }
+        $kpi = "Ca-du-" . $firstDay . "-" . $firstMonth . "-" . $firstYear . "au" . $secondDay . "-" . $secondMonth . "-" . $secondYear . ":" . array_sum($value);
+        $responses = new Response();
+        $responses->setContent(json_encode($kpi));
+        return $responses;
+    }
+    private function getStatus($status)
+    {
+        if ($status == "facture") {
+            return $status = 'true';
+        } else if ($status == "commande") {
+            return $status = 'false';
+        }
+    }
+    public function getMargeProduct($idInPath,$request){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"quotations");
+        foreach($responses as $response){
+            $value[]=$response->margin;
+
+        }
+        $responses = new Response();
+        $responses->setContent(json_encode($value));
+        return $responses;
+    }
+    public function getNumberInvoices($idInPath,$request){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"invoices");
+        foreach($responses as $response){
+            $value[]=$response;
+
+        }
+        $responses = new Response();
+        $responses->setContent(json_encode(count($value)));
+        return $responses;
+    }
+    public function getNumberOpportunity($idInPath,$request, $firstYear, $secondYear, $firstMonth, $secondMonth, $firstDay, $secondDay){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"opportunities");
+        $firstDate = $firstYear."-".$firstMonth."-".$firstDay;
+        $secondDate =  $secondYear."-".$secondMonth."-".$secondDay;
+        foreach($responses as $response){
+            
+            if($response->due_date >= $firstDate  && $response->due_date <= $secondDate){
+                $value[]=$response;
+            }
+            
+        }
+        
+        $responses = new Response();
+        $responses->setContent(json_encode(count($value)));
+        return $responses;
+    }
+    public function getNumberOpportunitys($idInPath,$request){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"opportunities");
+        
+        foreach($responses as $response){
+            
+            $value = [];
+
+            // jee parcour les réponses pour récupérer les occurences par an et par années
+            foreach ($responses as $response) {
+                //Je converti en date pour récupérer les valeurs
+                $dueDate = new DateTime($response->due_date);
+                $year = $dueDate->format('Y');
+                $month = $dueDate->format('m');
+
+                //Je vérifie si l'année et le mois actuelle sont déjà défini
+                //Si ce n'est pas définis
+                if (!isset($value[$year][$month])) {
+                    //J'initialise l'occurence à 1
+                    $value[$year][$month] = 1;
+                } else {
+                    //Sinon je rajoute 1 à l'occurence
+                    $value[$year][$month]++;
+                }
+            }
+            
+            // je trie par année et par mois
+            ksort($value);
+            foreach ($value as &$months) {
+                ksort($months);
+            }
+            
+          
+            
+        }
+        $responses = new Response();
+        $responses->setContent(json_encode($value));
+        return $responses;
+    }
+    public function getPipeCommercial($idInPath,$request){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"opportunities?status=ongoing");
+        foreach($responses as $response){
+            $value[]=[ $response->pipe_name, $response->user_name,$response->probability];
+            
+        }
+        $responses = new Response();
+        $responses->setContent(json_encode($value));
+        return $responses;
+    }
+    //!!! la réponse renvoie un message même si de base la response est 404-> date pas prise en compte
+    public function getDepenses($idInPath,$request, $firstYear, $secondYear, $firstMonth, $secondMonth, $firstDay, $secondDay){
+        $value = [];
+
+        $endpoint =  'expenses?orderby=last_update_date?date_before=' . $secondDay . '%2F' . $secondMonth . '%2F' . $secondYear . '&date_after=' . $firstDay . '%2F' . $firstMonth . '%2F' . $firstYear."&is_paid=true";
+
+        $responses = $this->getApiRelation($idInPath, $request,$endpoint);
+        foreach($responses as $response){
+            $value[]=$response;
+                        
+        }
+        $responses = new Response();
+        $responses->setContent(json_encode($value));
+        return $responses;
+    }
+    public function getStock($idInPath,$request){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"products");
+        foreach($responses as $response){
+            $value[]= [$response->name,$response->stock];
+            
+        }
+        $responses = new Response();
+        $responses->setContent(json_encode($value));
+        return $responses;
+    }
+    public function getNoteFrais($idInPath,$request){
+        $value = [];
+
+        $responses = $this->getApiRelation($idInPath, $request,"expenses");
+        foreach($responses as $response){
+            if($response->workforce_id !== null){
+                
+                $value[]=[$response->title,$response->total_amount];
+            }
+            
+            
+        }
+        
+        
+        $responses = new Response();
+        $responses->setContent(json_encode($value));
+        return $responses;
     }
 }

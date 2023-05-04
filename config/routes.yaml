@@ -12,3 +12,36 @@ api_add:
 api_id:
   path: /api/{id}/{endpoint}
   controller: App\Controller\ApiAccessController::apiBaseConnexion
+app_ca_month:
+    path: /api/{id}/dash/ca/{month}/{year}/{status}
+    controller: App\Controller\DashbordController::caPerMonth
+app_ca_year:
+    path: /api/{id}/dash/ca/{year}
+    controller: App\Controller\DashbordController::caPerYear
+app_ca_date:
+    path: api/{id}/dash/ca/{firstDay}/{firstMonth}/{firstYear}-{secondDay}/{secondMonth}/{secondYear}
+    controller: App\Controller\DashbordController::caPerDate
+app_marge:
+    path: api/{id}/dash/marge
+    controller: App\Controller\DashbordController::margeProduct
+app_devis:
+    path: api/{id}/dash/devis
+    controller: App\Controller\DashbordController::devis
+app_opportunites:
+    path: api/{id}/dash/opportunites
+    controller: App\Controller\DashbordController::opportunitys
+# app_opportunites:
+#     path: api/{id}/dash/opportunites/{firstDay}/{firstMonth}/{firstYear}-{secondDay}/{secondMonth}/{secondYear}
+#     controller: App\Controller\DashbordController::opportunity
+app_pipe:
+    path: api/{id}/dash/pipe
+    controller: App\Controller\DashbordController::pipe
+app_depense:
+    path: api/{id}/dash/depense/{firstDay}/{firstMonth}/{firstYear}-{secondDay}/{secondMonth}/{secondYear}
+    controller: App\Controller\DashbordController::depense
+app_stock:
+    path: api/{id}/dash/stock
+    controller: App\Controller\DashbordController::stock
+app_note:
+    path: api/{id}/dash/note
+    controller: App\Controller\DashbordController::note
